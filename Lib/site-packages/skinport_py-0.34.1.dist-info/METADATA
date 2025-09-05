@@ -1,0 +1,78 @@
+Metadata-Version: 2.4
+Name: skinport.py
+Version: 0.34.1
+Summary: A Python wrapper for the Skinport API
+Author-email: PaxxPatriot <skinport.py@gmail.com>
+License-Expression: MIT
+Project-URL: Documentation, https://paxxpatriot.github.io/skinport.py/
+Project-URL: Repository, https://github.com/PaxxPatriot/skinport.py.git
+Project-URL: Issues, https://github.com/PaxxPatriot/skinport.py/issues
+Keywords: Skinport,Counter-Strike 2,Team Fortress 2,Dota 2,Rust
+Classifier: Development Status :: 3 - Alpha
+Classifier: Environment :: Console
+Classifier: Framework :: aiohttp
+Classifier: Intended Audience :: Developers
+Classifier: Natural Language :: English
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3 :: Only
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Programming Language :: Python :: 3.13
+Classifier: Topic :: Internet
+Classifier: Topic :: Software Development :: Libraries
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: Topic :: Utilities
+Classifier: Typing :: Typed
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: aiohttp
+Requires-Dist: asyncache
+Requires-Dist: cachetools
+Requires-Dist: python-socketio[asyncio_client]
+Requires-Dist: msgpack
+Requires-Dist: brotli
+Dynamic: license-file
+
+# skinport.py
+An API wrapper for the Skinport API written in Python.
+
+Installing
+----------
+
+**Python 3.11 or higher is required**
+
+To install the library, you can just run the following command:
+
+```bash
+# Linux/macOS
+$ python3 -m pip install -U skinport.py
+
+# Windows
+> py -3 -m pip install -U skinport.py
+```
+
+To install the development version, do the following:
+```bash
+$ git clone https://github.com/PaxxPatriot/skinport.py
+$ cd skinport.py
+$ python3 -m pip install -U .
+```
+
+Quick Example
+--------------
+
+```Python
+import asyncio
+
+import skinport
+
+async def main():
+  client = skinport.Client()
+  # Get a list of all listed CS:GO items on skinport.com
+  items = await client.get_items()
+  print(items)
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
