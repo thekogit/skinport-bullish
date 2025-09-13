@@ -36,8 +36,8 @@
 1. Clone repo:
 
 ```bash
-git clone git@github.com:<user>/<repo>.git
-cd <repo>
+git clone git@github.com:thekogit/skinport-bullish.git
+cd skinport-bullish
 ```
 
 2. Create & activate venv:
