@@ -1,20 +1,4 @@
 #!/usr/bin/env python3
-"""
-skinport_bullish_full.py
-
-Fetch Skinport items, compute bullish score, and write results either to:
- - skinport_bullish.csv  (CSV mode)
- - skinport_bullish.html (HTML mode)
-
-Features:
- - Accept-Encoding: br required by Skinport API for items & sales endpoints
- - caching with requests_cache if available; file-cache fallback
- - robust parsing and error handling
- - interactive filters: category & weapon tokens (many keywords included)
- - smarter matching (avoid matching cases/charms/stickers that include token)
- - default output: HTML
- - adds 30d average and 7d_vs_30d ratio; includes 30d change in bullish score calculation
-"""
 import sys
 import math
 import time
