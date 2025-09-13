@@ -54,11 +54,6 @@ source venv/bin/activate
 
 3. Install dependencies:
 
-```
-requests>=2.28
-requests-cache>=0.9
-```
-
 ```bash
 python -m pip install -r requirements.txt
 ```
