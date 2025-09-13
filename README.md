@@ -157,9 +157,3 @@ skinport_bullish.*
 
 ---
 
-## Contributing
-
-- Add new keywords or filters in `main.py`
-- Fork → branch → edit → PR with examples
-- Open an issue with sample items for help
-
