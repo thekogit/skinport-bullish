@@ -1,128 +1,165 @@
-# Skinport Bullish — README
+# Skinport Bullish
 
-> **Skinport Bullish** is a small terminal utility that queries the Skinport public API to find the most *bullish* CS2 skins — i.e. items showing strong recent sales activity vs their weekly baseline — then displays them in a clear, human-friendly table.
-
----
-
-## Quick highlights
-
-- Uses the Skinport endpoints `/v1/items` and `/v1/sales/history` (single call each).
-- Sends the `Accept-Encoding: br` header as required by Skinport.
-- Filters by currency (USD, EUR, PLN, GBP), min/max price and minimum weekly sales.
-- Computes a **Bullish Score** combining short-term growth and weekly volume to surface meaningful moves.
+**Skinport Bullish** is a Python tool that finds CS2 skins with strong recent sales. It outputs an **HTML** table (default) or **CSV** file.
 
 ---
 
-## Prerequisites
+## Highlights
 
-- Python 3.9+ (you used 3.13 — that works)
+- Queries Skinport API once for items and once for sales history.
+- Filters for currency, price, minimum weekly sales, and item type (`knife`, `gloves`, `ak-47`, etc.).
+- Calculates **Bullish Score**: combines short-term (24h vs 7d) and medium-term (7d vs 30d) trends, weighted by volume.
+- Output: `skinport_bullish.html` or `skinport_bullish.csv`.
+
+---
+
+## Features
+
+- Token-based filters and weapon aliases
+- Excludes non-weapon items (cases, charms, stickers)
+- Uses 30-day averages if available
+- Caching via `requests_cache` or local file (`~/.skinport_skin_cache`)
+- Merge mode updates a master CSV
+
+---
+
+## Requirements
+
+- Python 3.9+
 - Internet access
-- A terminal (PowerShell, bash, etc.)
+- Terminal (PowerShell, cmd, bash, etc.)
 
+---
 
-## Install & run
+## Setup & Run
 
-1. Create a virtual environment:
+1. Clone repo:
+
+```bash
+git clone git@github.com:<user>/<repo>.git
+cd <repo>
+```
+
+2. Create & activate venv:
 
 ```bash
 python -m venv venv
-# windows
+# Windows PowerShell
+venv\Scripts\Activate.ps1
+# Windows cmd
 venv\Scripts\activate
-# linux / mac
+# macOS/Linux
 source venv/bin/activate
 ```
 
-2. Install dependencies:
+3. Install dependencies:
+
+```
+requests>=2.28
+requests-cache>=0.9
+```
 
 ```bash
 python -m pip install -r requirements.txt
 ```
 
-3. Run the tool:
+4. Run:
 
 ```bash
 python main.py
 ```
 
-The program will prompt for:
-- `Currency` — one of: `usd`, `eur`, `pln`, `gbp` (case-insensitive)
-- `Minimum price` — a number
-- `Maximum price` — a number
-- `Minimum sales in the last week` — integer
+---
 
-It will then fetch the data, compute the bullish scores, and print a nicely formatted table.
+### Prompts
 
-## Example run (illustrative)
+- **Currency** — `usd`, `eur`, `pln`, `gbp` (default `usd`)
+- **Min/Max price** — numbers (blank = no limit)
+- **Min weekly sales** — number
+- **Filters** — comma-separated tokens (blank = all)
+- **Output format** — `html` (default) or `csv`
+- **Write mode** — `overwrite` (default) or `merge`
 
-```
-=== Skinport Bullish Skins Analyzer ===
-Currency (usd, pln, eur, gbp): pln
-Minimum price: 5
-Maximum price: 200
-Minimum sales in the last week: 10
+Outputs saved as `skinport_bullish.html` or `.csv`.
 
-Most bullish skins (sorted):
+---
 
-+-----------------------------------------------------------+
-         | MinPrice | Currency | 7d_vol | 7d_avg | 24h_avg | SalesGrowthRatio | BullishScore |
-+-----------------------------------------------------------+
-| AWP Dragon...|    45.00 |    PLN   |   112  |  40.50 |   65.70 |  1.623           |     2.3456   |
-+-----------------------------------------------------------+
-```
+## Output Columns
 
-## How it works (technical detail)
+- `Name`, `Skinport_URL`, `Steam_URL`
+- `Price`, `Currency`
+- `SalesThisWeek`, `7d_avg`, `24h_avg`, `30d_avg`
+- `7d_vs_30d`, `GrowthRatio`, `BullishScore`, `LastUpdated`
 
-1. **Endpoints used**
-   - `/v1/items` — returns current item listings and `min_price` fields used as the representative price.
-   - `/v1/sales/history` — returns aggregated sales stats that include `last_24_hours` and `last_7_days` objects containing `avg` and `volume` values.
+---
 
-2. **Required header**
-   - The Skinport endpoints used require `Accept-Encoding: br` and a sensible `User-Agent` header. The program sets those in its requests.
+## BullishScore
 
-3. **Rate limits & caching**
-   - The endpoints are cached and rate-limited (docs indicate a small number of requests per time window). The script makes one call per endpoint and joins results locally to avoid hitting limits. If you run repeatedly while developing, add a 5-minute local cache file to limit calls.
+1. Short-term: `24h_avg / 7d_avg`
+2. Medium-term: `7d_avg / 30d_avg`
+3. Weighted: `0.6*short + 0.4*medium`
+4. Adjust for volume: `1 + log10(1 + vol_7d)`
+5. Final score = weighted growth × volume factor
 
-4. **Bullish Score**
-   - Intuition: we want items that show a significant short-term uptick *and* have meaningful volume.
-   - Formula used in `main.py` (in words):
-     - Compute short-term growth ratio: `growth_ratio = avg_24h / avg_7d` (or a fallback value if `avg_7d` missing).
-     - Scale by `1 + log10(1 + vol_7d)` to prefer items with higher trading volume but with diminishing returns for huge volumes.
-     - `BullishScore = growth_ratio * (1 + log10(1 + vol_7d))`.
-   - This surfaces items where 24h activity meaningfully exceeds the weekly baseline while ensuring the move isn't from 1 or 2 trades (volume matters).
+---
+
+## Filtering
+
+- Handles hyphens (`m4a1-s`, `m4a4`)
+- Excludes cases, charms, stickers, souvenirs
+- Knives: specific tokens or star `★` + knife token
+
+---
+
+## Caching & Rate-Limits
+
+- One request each to `/v1/items` and `/v1/sales/history`
+- Uses `requests_cache` if available
+- Local cache: `~/.skinport_skin_cache` (TTL 300s)
+- Avoid repeated runs to prevent rate-limits
+
+---
 
 ## Troubleshooting
 
-- **400 Bad Request** — Ensure you include `Accept-Encoding: br` header exactly. If the script prints the response body, inspect it for hints.
-- **Rate limiting / 429** — Wait a few minutes or cache the results locally; avoid per-item requests in quick loops.
-- **No results** — widen your price window or lower `min_sales_week`.
-- **SSL / network errors** — ensure your machine can reach `api.skinport.com` and that no corporate proxy blocks Brotli.
+- `406` → check `Accept-Encoding: br` header
+- `400/429` → respect cache or retry later
+- No results → widen filters
+- Wrong matches → use specific tokens
+- Datetime warnings → UTC used
+- Automation → convert prompts to CLI args
 
-## Contribution & license
+---
 
-- This repository uses the **MIT License**.
+## Optional Files
+
+**requirements.txt**
 
 ```
-MIT License
-
-Copyright (c) 2025 Eliasz Dobrzański
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+requests>=2.28
+requests-cache>=0.9
 ```
+
+**.gitignore**
+
+```
+__pycache__/
+*.py[cod]
+venv/
+.env/
+.vscode/
+.DS_Store
+Thumbs.db
+*.log
+skinport_bullish.*
+.skinport_skin_cache/
+```
+
+---
+
+## Contributing
+
+- Add new keywords or filters in `main.py`
+- Fork → branch → edit → PR with examples
+- Open an issue with sample items for help
+
