@@ -1,154 +1,90 @@
-# Skinport Bullish
+# Skinport Bullish CS2 Tool
 
-**Skinport Bullish** is a Python tool that finds CS2 skins with strong recent sales. It outputs an **HTML** table (default) or **CSV** file.
-
----
-
-## Highlights
-
-- Queries Skinport API once for items and once for sales history.
-- Filters for currency, price, minimum weekly sales, and item type (`knife`, `gloves`, `ak-47`, etc.).
-- Calculates **Bullish Score**: combines short-term (24h vs 7d) and medium-term (7d vs 30d) trends, weighted by volume.
-- Output: `skinport_bullish.html` or `skinport_bullish.csv`.
-
----
-
-## Features
-
-- Token-based filters and weapon aliases
-- Excludes non-weapon items (cases, charms, stickers)
-- Uses 30-day averages if available
-- Caching via `requests_cache` or local file (`~/.skinport_skin_cache`)
-- Merge mode updates a master CSV
-
----
+This is a Python program for finding CS2 skins that had a lot of sales recently. It checks prices and sales from Skinport and Steam, does some math, and tries to show which items look "bullish" (going up in sales and price).
 
 ## Requirements
 
-- Python 3.9+
-- Internet access
-- Terminal (PowerShell, cmd, bash, etc.)
+- Python 3.9 or newer
+- Internet connection
 
----
 
-## Setup & Run
+## Install
 
-1. Clone repo:
+Clone this repo:
 
 ```bash
-git clone git@github.com:thekogit/skinport-bullish.git
+git clone https://github.com/thekogit/skinport-bullish.git
 cd skinport-bullish
 ```
 
-2. Create & activate venv:
+Set up a virtual environment:
 
 ```bash
 python -m venv venv
-# Windows PowerShell
+# Then activate it:
+# Windows PowerShell:
 venv\Scripts\Activate.ps1
-# Windows cmd
-venv\Scripts\activate
-# macOS/Linux
+# Windows cmd:
+venv\Scripts\activate.bat
+# macOS / Linux:
 source venv/bin/activate
 ```
 
-3. Install dependencies:
+Install the needed stuff:
 
 ```bash
 python -m pip install -r requirements.txt
 ```
 
-4. Run:
+
+## How To Run
+
+Just run:
 
 ```bash
 python main.py
 ```
 
----
+It will ask questions and run with whatever answers are given, or use defaults. All the real stuff happens in `main.py` and it asks for the filters in the terminal.
 
-### Prompts
+## What It Does
 
-- **Currency** — `usd`, `eur`, `pln`, `gbp` (default `usd`)
-- **Min/Max price** — numbers (blank = no limit)
-- **Min weekly sales** — number
-- **Filters** — comma-separated tokens (blank = all)
-- **Output format** — `html` (default) or `csv`
-- **Write mode** — `overwrite` (default) or `merge`
+- Gets CS2 skin info from Skinport (and Steam)
+- Filters items by price, weekly sales, and item type like knife, glove, AK, etc.
+- Tries to avoid cases, stickers, charms, souvenirs, etc.
+- Scores skins with some custom formula, mixing short-term and long-term changes, and volume
+- Supports currencies: usd, eur, pln, gbp
 
-Outputs saved as `skinport_bullish.html` or `.csv`.
 
----
+## Output
 
-## Output Columns
+- Results are saved as `skinportbullish.html` (table) or `skinportbullish.csv` (spreadsheet)
+- Can merge results with older CSV instead of overwriting
 
-- `Name`, `Skinport_URL`, `Steam_URL`
-- `Price`, `Currency`
-- `SalesThisWeek`, `7d_avg`, `24h_avg`, `30d_avg`
-- `7d_vs_30d`, `GrowthRatio`, `BullishScore`, `LastUpdated`
 
----
+## Command-line Options
 
-## BullishScore
+You can set these filters when running (or just use the prompts):
 
-1. Short-term: `24h_avg / 7d_avg`
-2. Medium-term: `7d_avg / 30d_avg`
-3. Weighted: `0.6*short + 0.4*medium`
-4. Adjust for volume: `1 + log10(1 + vol_7d)`
-5. Final score = weighted growth × volume factor
+- Currency (`usd`, `eur`, etc., default: usd)
+- Min/Max price (type a number, blank = all)
+- Min weekly sales (number)
+- Item type (`knife`, `ak-47`, etc)
+- Output file format (`html` by default, or `csv`)
+- Write mode: overwrite or merge with old results
 
----
 
-## Filtering
+## Features
 
-- Handles hyphens (`m4a1-s`, `m4a4`)
-- Excludes cases, charms, stickers, souvenirs
-- Knives: specific tokens or star `★` + knife token
+- Tries not to repeat API calls too much (caches results)
+- Deals with API errors and retries for Steam
+- Conservative with timing (avoids bans/limits)
+- Highlights top candidates with profit and risk info
+- Handles Steam fees, Skinport fees, and does "arbitrage" checks
 
----
 
-## Caching & Rate-Limits
+## Notes
 
-- One request each to `/v1/items` and `/v1/sales/history`
-- Uses `requests_cache` if available
-- Local cache: `~/.skinport_skin_cache` (TTL 300s)
-- Avoid repeated runs to prevent rate-limits
-
----
-
-## Troubleshooting
-
-- `406` → check `Accept-Encoding: br` header
-- `400/429` → respect cache or retry later
-- No results → widen filters
-- Wrong matches → use specific tokens
-- Datetime warnings → UTC used
-- Automation → convert prompts to CLI args
-
----
-
-## Optional Files
-
-**requirements.txt**
-
-```
-requests>=2.28
-requests-cache>=0.9
-```
-
-**.gitignore**
-
-```
-__pycache__/
-*.py[cod]
-venv/
-.env/
-.vscode/
-.DS_Store
-Thumbs.db
-*.log
-skinport_bullish.*
-.skinport_skin_cache/
-```
-
----
-
+- Always obey rate limits (sometimes you have to wait if using a lot)
+- Fails gracefully and saves errors for later retry
+- For faster results, install `aiohttp` (optional for concurrency)
