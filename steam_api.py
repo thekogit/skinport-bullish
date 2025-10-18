@@ -421,7 +421,6 @@ if AIOHTTP_AVAILABLE:
         return steam_data_map
 
 def fetch_steam_price_direct_sync(skin_name: str, app_id: int = 730, currency: str = "USD") -> Dict[str, Any]:
-    # Removed: global steam_currency_id (now using utils.steam_currency_id)
 
     cache_key = _cache_key_for_steam("steam_direct", skin_name, currency, app_id)
     cached_data = load_cache(cache_key, STEAM_CACHE_TTL)

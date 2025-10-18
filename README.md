@@ -1,4 +1,4 @@
-# skins-arb
+# Skinport Bullish Skins Analyzer
 
 A simple tool to find price differences (arbitrage) between Skinport and Steam markets.
 
