@@ -23,7 +23,6 @@ from filters import parse_filters, matches_filters, get_available_filters
 PUMP_RISK_MAX = 60.0
 
 def display_game_selection():
-    """Display game selection menu with new TF2, Rust, and ALL options"""
     print("="*70)
     print("🎮 Select Game(s)")
     print("="*70)
@@ -52,7 +51,6 @@ def display_game_selection():
 
 
 def display_filter_help(game: str):
-    """Display available filters for the selected game"""
     print(f"\nAvailable filters for {SUPPORTED_GAMES[game]['name']}:")
     categories = get_available_filters(game)
     for category, filters in categories.items():
@@ -65,7 +63,6 @@ def display_filter_help(game: str):
 
 def process_game(game: str, currency: str, min_price: float, max_price: float,
                  min_sales_week: int, fetch_steam: bool, filter_tokens: List[str]) -> tuple:
-    """Process items for a specific game"""
     game_config = SUPPORTED_GAMES[game]
     game_name = game_config["name"]
     app_id = game_config["app_id"]

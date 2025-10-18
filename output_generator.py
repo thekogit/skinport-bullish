@@ -39,8 +39,6 @@ def read_csv_to_map(path: Path) -> Dict[str, Dict[str, Any]]:
 
 def generate_html_with_candidates(candidates: List[Dict[str, Any]], rows: List[Dict[str, Any]], 
                                 out_path: Path, title: str = "Fee-Aware Skinport Analysis"):
-    """Generate comprehensive HTML report with styling and interactivity"""
-
     def format_pump_risk_cell(pump_risk_str: str) -> str:
         try:
             pump_risk = float(pump_risk_str) if pump_risk_str else 0.0
