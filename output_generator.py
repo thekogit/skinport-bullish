@@ -404,28 +404,73 @@ def generate_html_with_candidates(candidates: List[Dict[str, Any]], rows: List[D
     }});
 
     // Table sorting functionality
-    document.querySelectorAll('th').forEach((th, colIndex) => {{
+    document.querySelectorAll('th').forEach((th) => {{
         th.addEventListener('click', () => {{
             const table = th.closest('table');
             const tbody = table.querySelector('tbody');
             const rows = Array.from(tbody.querySelectorAll('tr'));
 
-            const isNumeric = th.classList.contains('num') || th.textContent.includes('Price') || 
-                            th.textContent.includes('Sales') || th.textContent.includes('Risk');
+            // Get the actual column index from the th element
+            const allHeaders = Array.from(table.querySelectorAll('thead th'));
+            const colIndex = allHeaders.indexOf(th);
 
-            rows.sort((a, b) => {{
-                const aVal = a.cells[colIndex].textContent.trim();
-                const bVal = b.cells[colIndex].textContent.trim();
+            // Determine if this is a numeric column
+            const isNumeric = th.classList.contains('num') || 
+                              th.textContent.includes('Price') ||
+                              th.textContent.includes('Sales') ||
+                              th.textContent.includes('Risk') ||
+                              th.textContent.includes('Profit') ||
+                              th.textContent.includes('Net') ||
+                              th.textContent.includes('Score') ||
+                              th.textContent.includes('Expl') ||
+                              th.textContent.includes('Growth') ||
+                              th.textContent.includes('Ratio') ||
+                              th.textContent.includes('vs') ||
+                              th.textContent.includes('avg');
 
-                if (isNumeric) {{
-                    const aNum = parseFloat(aVal.replace(/[^0-9.-]/g, '')) || 0;
-                    const bNum = parseFloat(bVal.replace(/[^0-9.-]/g, '')) || 0;
-                    return aNum - bNum;
-                }} else {{
-                    return aVal.localeCompare(bVal);
-                }}
+            // Get current sort direction (toggle between asc and desc)
+            const currentDir = th.dataset.sortDir || 'asc';
+            const newDir = currentDir === 'asc' ? 'desc' : 'asc';
+
+            // Clear all sort indicators
+            allHeaders.forEach(h => {{
+                h.dataset.sortDir = '';
+                const arrow = h.querySelector('.sort-arrow');
+                if (arrow) arrow.textContent = '';
             }});
 
+            // Set new sort direction
+            th.dataset.sortDir = newDir;
+            const arrow = th.querySelector('.sort-arrow');
+            if (arrow) arrow.textContent = newDir === 'asc' ? ' ▲' : ' ▼';
+
+            // Sort rows
+            rows.sort((a, b) => {{
+                const aCell = a.cells[colIndex];
+                const bCell = b.cells[colIndex];
+
+                if (!aCell || !bCell) return 0;
+
+                let aVal = aCell.textContent.trim();
+                let bVal = bCell.textContent.trim();
+
+                let comparison = 0;
+
+                if (isNumeric) {{
+                    // Extract numeric value, handling percentages, currency symbols, and badges
+                    const aNum = parseFloat(aVal.replace(/[^0-9.-]/g, '')) || 0;
+                    const bNum = parseFloat(bVal.replace(/[^0-9.-]/g, '')) || 0;
+                    comparison = aNum - bNum;
+                }} else {{
+                    // String comparison
+                    comparison = aVal.localeCompare(bVal);
+                }}
+
+                // Apply sort direction
+                return newDir === 'asc' ? comparison : -comparison;
+            }});
+
+            // Re-append sorted rows to DOM
             rows.forEach(row => tbody.appendChild(row));
         }});
     }});

@@ -195,16 +195,91 @@ def clean_price_string(price_str: str, currency: str = "USD") -> Optional[float]
     except (ValueError, TypeError):
         return None
 
-def make_skinport_url(name: str, app_id: int = 730) -> str:
-    if app_id == 570:  # Dota 2
-        return f"https://skinport.com/market/dota2?search={urllib.parse.quote(name)}"
-    elif app_id == 440:  # Team Fortress 2
-        return f"https://skinport.com/market/tf2?search={urllib.parse.quote(name)}"
-    elif app_id == 252490:  # Rust
-        return f"https://skinport.com/market/rust?search={urllib.parse.quote(name)}"
-    else:  # CS2
-        return f"https://skinport.com/market?search={urllib.parse.quote(name)}"
+def parse_rust_item_category(item_name: str) -> tuple:
+    """
+    Parse Rust item name to determine category and subcategory for Skinport URLs.
 
+    Returns: (category, subcategory) tuple, or ("", "") if cannot be determined
+    """
+    name_lower = item_name.lower()
+
+    # Weapons
+    if "ak47" in name_lower or "ak-47" in name_lower or "ak 47" in name_lower:
+        return ("weapon", "ak47u")
+    elif "lr-300" in name_lower or "lr300" in name_lower:
+        return ("weapon", "lr300")
+    elif "thompson" in name_lower:
+        return ("weapon", "thompson")
+    elif "mp5" in name_lower:
+        return ("weapon", "mp5")
+    elif "custom smg" in name_lower or "custom_smg" in name_lower:
+        return ("weapon", "smg")
+    elif "python" in name_lower:
+        return ("weapon", "python")
+    elif "semi-automatic rifle" in name_lower or "semi automatic rifle" in name_lower:
+        return ("weapon", "semi_auto_rifle")
+    elif "bolt" in name_lower and ("rifle" in name_lower or "action" in name_lower):
+        return ("weapon", "bolt_rifle")
+    elif "revolver" in name_lower:
+        return ("weapon", "revolver")
+    elif "pump shotgun" in name_lower:
+        return ("weapon", "pump_shotgun")
+    elif "spas-12" in name_lower or "spas12" in name_lower:
+        return ("weapon", "spas12")
+    elif "pants" in name_lower:
+        return ("clothing", "pants")
+    elif "hoodie" in name_lower:
+        return ("clothing", "hoodie")
+    elif "jacket" in name_lower:
+        return ("clothing", "jacket")
+    elif "tshirt" in name_lower or "t-shirt" in name_lower or ("shirt" in name_lower and "tshirt" not in name_lower):
+        return ("clothing", "tshirt")
+    elif "gloves" in name_lower or "glove" in name_lower:
+        return ("clothing", "gloves")
+    elif "boots" in name_lower or "boot" in name_lower:
+        return ("clothing", "boots")
+    elif "bandana" in name_lower or "mask" in name_lower:
+        return ("clothing", "bandana")
+    elif "hat" in name_lower or "cap" in name_lower or "beanie" in name_lower:
+        return ("clothing", "hat")
+    elif "metal chest" in name_lower or "metal_chest" in name_lower:
+        return ("armor", "metal_chest_plate")
+    elif "roadsign" in name_lower and "chest" in name_lower:
+        return ("armor", "roadsign_chest")
+    elif "roadsign" in name_lower and "kilt" in name_lower:
+        return ("armor", "roadsign_kilt")
+    elif "coffee can" in name_lower or "coffee_can" in name_lower:
+        return ("armor", "coffeecan_helmet")
+    elif "riot helmet" in name_lower:
+        return ("armor", "riot_helmet")
+    elif "metal facemask" in name_lower:
+        return ("armor", "metal_facemask")
+    elif "door" in name_lower:
+        return ("misc", "door")
+    elif "sleeping bag" in name_lower or "sleepingbag" in name_lower:
+        return ("misc", "sleepingbag")
+    elif "sign" in name_lower and "large" in name_lower:
+        return ("misc", "sign_large")
+    elif "box" in name_lower or "storage" in name_lower:
+        return ("misc", "box")
+
+    return ("", "")
+
+
+def make_skinport_url(name: str, app_id: int = 730) -> str:
+    """Generate proper Skinport URL for different games."""
+    if app_id == 570:
+        return f"https://skinport.com/market/dota2?search={urllib.parse.quote(name)}"
+    elif app_id == 440:
+        return f"https://skinport.com/market/tf2?search={urllib.parse.quote(name)}"
+    elif app_id == 252490:
+        category, subcategory = parse_rust_item_category(name)
+        if category and subcategory:
+            return f"https://skinport.com/rust/market/{category}/{subcategory}?item={urllib.parse.quote(name)}"
+        else:
+            return f"https://skinport.com/rust/market?search={urllib.parse.quote(name)}"
+    else:
+        return f"https://skinport.com/market?search={urllib.parse.quote(name)}"
 
 def make_steam_url(name: str, app_id: int = 730) -> str:
     return f"https://steamcommunity.com/market/listings/{app_id}/{urllib.parse.quote(name)}"
