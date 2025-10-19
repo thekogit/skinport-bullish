@@ -185,7 +185,18 @@ def process_game(game: str, currency: str, min_price: float, max_price: float,
             if not matches_filters(name, filter_tokens, item=it, game=game):
                 continue
 
-            price = maybe_float(it.get("min_price") or it.get("price") or None)
+            price = maybe_float(
+                it.get("suggested_price") or  # Suggested price (most accurate for display)
+                it.get("min_price") or        # Minimum listing price (fallback)
+                it.get("price") or            # Generic price field (fallback)
+                None
+            )
+
+            # Optional: Verify currency matches
+            item_currency = it.get("currency", currency).upper()
+            if item_currency != currency.upper():
+                if TQDM_AVAILABLE:
+                    progress_bar.write(f"Warning: Currency mismatch for {name}: {item_currency} vs {currency}")
             if price is None:
                 continue
 
