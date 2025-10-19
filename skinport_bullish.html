@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fee-Aware Analysis • Counter-Strike 2 + Dota 2 + Team Fortress 2 + Rust</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+               background: #0f172a; color: #e2e8f0; padding:20px; }
+        .container { max-width:100%; margin:0 auto; }
+        h1 { color:#fff; margin-bottom:10px; }
+        .meta { color:#94a3b8; margin-bottom:20px; font-size:14px; }
+        .card { background:#1e293b; border-radius:8px; padding:20px; margin-bottom:20px; 
+                box-shadow:0 4px 6px rgba(0,0,0,0.3); }
+        .cand-note { background:#1e293b; color:#fff; padding:12px; margin-bottom:15px; border-radius:6px;
+                     border-left:4px solid #22c55e; }
+        .table-wrap { overflow-x:auto; }
+        table { width:100%; border-collapse:collapse; font-size:13px; }
+        th { background:#334155; color:#fff; padding:12px 8px; text-align:left; position:sticky; top:0;
+             white-space:nowrap; cursor:pointer; user-select:none; }
+        th:hover { background:#475569; }
+        .sort-arrow { color:#94a3b8; font-size:10px; margin-left:4px; }
+        td { padding:10px 8px; border-bottom:1px solid #334155; }
+        tr:hover { background:#334155; }
+        .num { text-align:right; font-family:'Courier New', monospace; }
+        a { color:#3b82f6; text-decoration:none; }
+        a:hover { text-decoration:underline; }
+        .badge { padding:4px 8px; border-radius:4px; font-size:11px; font-weight:600; white-space:nowrap; }
+        .badge.green { background:#22c55e; color:#000; }
+        .badge.yellow { background:#eab308; color:#000; }
+        .badge.orange { background:#f97316; color:#fff; }
+        .badge.red { background:#ef4444; color:#fff; }
+        .badge.gray { background:#6b7280; color:#fff; }
+        .skin-name-cell { position: relative; cursor: help; }
+        .chart-popup { position: absolute; display: none; z-index: 1000; background: #1e293b; 
+                       border: 2px solid #3b82f6; border-radius: 8px; padding: 15px; 
+                       box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 400px; left: 0; top: 100%; margin-top: 5px; }
+        .chart-popup.active { display: block; }
+        .chart-link { color: #3b82f6; cursor: pointer; font-size: 16px; }
+        .chart-link:hover { color: #60a5fa; }
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; 
+                 background-color: rgba(0,0,0,0.8); }
+        .modal-content { background-color: #1e293b; margin: 5% auto; padding: 20px; border: 1px solid #3b82f6; 
+                         width: 80%; max-width: 800px; border-radius: 10px; }
+        .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .close:hover { color: #fff; }
+        #modalChartContainer { height: 400px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Fee-Aware Analysis • Counter-Strike 2 + Dota 2 + Team Fortress 2 + Rust</h1>
+        <div class="meta">Generated: 2025-10-19 23:02:42 UTC</div>
+<div class='cand-note'><strong>🎯 Fee-Aware Top Candidates:</strong> 3 item(s) with profitable arbitrage after platform fees</div><div class='card table-wrap'><table class='sortable-table'><thead><tr><th>Name<span class="sort-arrow"> ▼</span></th><th>Chart<span class="sort-arrow"> ▼</span></th><th>Skinport<span class="sort-arrow"> ▼</span></th><th>Steam<span class="sort-arrow"> ▼</span></th><th>SP Price<span class="sort-arrow"> ▼</span></th><th>Steam Price<span class="sort-arrow"> ▼</span></th><th>Fee-Aware Profit<span class="sort-arrow"> ▼</span></th><th>Net Steam<span class="sort-arrow"> ▼</span></th><th>Currency<span class="sort-arrow"> ▼</span></th><th>SP Sales7d<span class="sort-arrow"> ▼</span></th><th>Steam Sales7d<span class="sort-arrow"> ▼</span></th><th>SP 7d avg<span class="sort-arrow"> ▼</span></th><th>SP 24h avg<span class="sort-arrow"> ▼</span></th><th>SP 30d avg<span class="sort-arrow"> ▼</span></th><th>Steam Explosiveness<span class="sort-arrow"> ▼</span></th><th>SP 7d vs 30d<span class="sort-arrow"> ▼</span></th><th>SP Growth<span class="sort-arrow"> ▼</span></th><th>SP Bullish<span class="sort-arrow"> ▼</span></th><th>SP Expl<span class="sort-arrow"> ▼</span></th><th>PumpRisk<span class="sort-arrow"> ▼</span></th><th>Arbitrage<span class="sort-arrow"> ▼</span></th><th>Source<span class="sort-arrow"> ▼</span></th></tr></thead><tbody><tr style='background:linear-gradient(180deg, rgba(34,197,94,.12), transparent)'><td class="skin-name-cell" data-chart-id="chart_4331072769945427131">AK-47 | Inheritance (Field-Tested)</td><td><a href="#chart_4331072769945427131" class="chart-link" onclick="showChart('chart_4331072769945427131'); return false;">📊 View</a></td><td><a href="https://skinport.com/market?search=AK-47%20%7C%20Inheritance%20%28Field-Tested%29" target="_blank" rel="noopener">Skinport</a></td><td><a href="https://steamcommunity.com/market/listings/730/AK-47%20%7C%20Inheritance%20%28Field-Tested%29" target="_blank" rel="noopener">Steam</a></td><td class='num'>180.28</td><td class='num'>280.23</td><td class="num"><span class="badge green">+32.1%</span></td><td class='num'>238.20</td><td>PLN</td><td class='num'>155</td><td class='num'>137</td><td class='num'>246.19</td><td class='num'>248.48</td><td class='num'>249.20</td><td class='num'>30.0</td><td class='num'>0.988</td><td class='num'>1.009</td><td class='num'>3.1955</td><td class='num'>17.14</td><td class="num"><span class="badge green">✅ 0.0</span></td><td><span class="badge green">EXCELLENT BUY</span></td><td>Steam Community Market (Direct)</td></tr><tr style='background:linear-gradient(180deg, rgba(34,197,94,.12), transparent)'><td class="skin-name-cell" data-chart-id="chart_9154343304699772475">USP-S | Printstream (Minimal Wear)</td><td><a href="#chart_9154343304699772475" class="chart-link" onclick="showChart('chart_9154343304699772475'); return false;">📊 View</a></td><td><a href="https://skinport.com/market?search=USP-S%20%7C%20Printstream%20%28Minimal%20Wear%29" target="_blank" rel="noopener">Skinport</a></td><td><a href="https://steamcommunity.com/market/listings/730/USP-S%20%7C%20Printstream%20%28Minimal%20Wear%29" target="_blank" rel="noopener">Steam</a></td><td class='num'>178.09</td><td class='num'>237.83</td><td class="num"><span class="badge green">+13.5%</span></td><td class='num'>202.16</td><td>PLN</td><td class='num'>110</td><td class='num'>61</td><td class='num'>204.74</td><td class='num'>213.61</td><td class='num'>206.06</td><td class='num'>21.3</td><td class='num'>0.994</td><td class='num'>1.043</td><td class='num'>3.1167</td><td class='num'>9.00</td><td class="num"><span class="badge green">✅ 0.0</span></td><td><span class="badge green">GOOD BUY</span></td><td>Steam Community Market (Direct)</td></tr><tr style='background:linear-gradient(180deg, rgba(34,197,94,.12), transparent)'><td class="skin-name-cell" data-chart-id="chart_1055336758580418511">Operation Bravo Case</td><td><a href="#chart_1055336758580418511" class="chart-link" onclick="showChart('chart_1055336758580418511'); return false;">📊 View</a></td><td><a href="https://skinport.com/market?search=Operation%20Bravo%20Case" target="_blank" rel="noopener">Skinport</a></td><td><a href="https://steamcommunity.com/market/listings/730/Operation%20Bravo%20Case" target="_blank" rel="noopener">Steam</a></td><td class='num'>152.67</td><td class='num'>198.73</td><td class="num"><span class="badge green">+10.6%</span></td><td class='num'>168.92</td><td>PLN</td><td class='num'>108</td><td class='num'>192</td><td class='num'>162.02</td><td class='num'>160.58</td><td class='num'>163.51</td><td class='num'>22.7</td><td class='num'>0.991</td><td class='num'>0.991</td><td class='num'>3.0102</td><td class='num'>3.46</td><td class="num"><span class="badge green">✅ 0.0</span></td><td><span class="badge green">GOOD BUY</span></td><td>Steam Community Market (Direct)</td></tr></tbody></table></div><div class='card table-wrap'><table class='sortable-table'><thead><tr><th>Name<span class="sort-arrow"> ▼</span></th><th>Chart<span class="sort-arrow"> ▼</span></th><th>Skinport<span class="sort-arrow"> ▼</span></th><th>Steam<span class="sort-arrow"> ▼</span></th><th>SP Price<span class="sort-arrow"> ▼</span></th><th>Steam Price<span class="sort-arrow"> ▼</span></th><th>Fee-Aware Profit<span class="sort-arrow"> ▼</span></th><th>Net Steam<span class="sort-arrow"> ▼</span></th><th>Currency<span class="sort-arrow"> ▼</span></th><th>SP Sales7d<span class="sort-arrow"> ▼</span></th><th>Steam Sales7d<span class="sort-arrow"> ▼</span></th><th>SP 7d avg<span class="sort-arrow"> ▼</span></th><th>SP 24h avg<span class="sort-arrow"> ▼</span></th><th>SP 30d avg<span class="sort-arrow"> ▼</span></th><th>Steam Explosiveness<span class="sort-arrow"> ▼</span></th><th>SP 7d vs 30d<span class="sort-arrow"> ▼</span></th><th>SP Growth<span class="sort-arrow"> ▼</span></th><th>SP Bullish<span class="sort-arrow"> ▼</span></th><th>SP Expl<span class="sort-arrow"> ▼</span></th><th>PumpRisk<span class="sort-arrow"> ▼</span></th><th>Arbitrage<span class="sort-arrow"> ▼</span></th><th>Source<span class="sort-arrow"> ▼</span></th></tr></thead><tbody><tr><td class="skin-name-cell" data-chart-id="chart_4331072769945427131">AK-47 | Inheritance (Field-Tested)</td><td><a href="#chart_4331072769945427131" class="chart-link" onclick="showChart('chart_4331072769945427131'); return false;">📊 View</a></td><td><a href="https://skinport.com/market?search=AK-47%20%7C%20Inheritance%20%28Field-Tested%29" target="_blank" rel="noopener">Skinport</a></td><td><a href="https://steamcommunity.com/market/listings/730/AK-47%20%7C%20Inheritance%20%28Field-Tested%29" target="_blank" rel="noopener">Steam</a></td><td class='num'>180.28</td><td class='num'>280.23</td><td class="num"><span class="badge green">+32.1%</span></td><td class='num'>238.20</td><td>PLN</td><td class='num'>155</td><td class='num'>137</td><td class='num'>246.19</td><td class='num'>248.48</td><td class='num'>249.20</td><td class='num'>30.0</td><td class='num'>0.988</td><td class='num'>1.009</td><td class='num'>3.1955</td><td class='num'>17.14</td><td class="num"><span class="badge green">✅ 0.0</span></td><td><span class="badge green">EXCELLENT BUY</span></td><td>Steam Community Market (Direct)</td></tr><tr><td class="skin-name-cell" data-chart-id="chart_9154343304699772475">USP-S | Printstream (Minimal Wear)</td><td><a href="#chart_9154343304699772475" class="chart-link" onclick="showChart('chart_9154343304699772475'); return false;">📊 View</a></td><td><a href="https://skinport.com/market?search=USP-S%20%7C%20Printstream%20%28Minimal%20Wear%29" target="_blank" rel="noopener">Skinport</a></td><td><a href="https://steamcommunity.com/market/listings/730/USP-S%20%7C%20Printstream%20%28Minimal%20Wear%29" target="_blank" rel="noopener">Steam</a></td><td class='num'>178.09</td><td class='num'>237.83</td><td class="num"><span class="badge green">+13.5%</span></td><td class='num'>202.16</td><td>PLN</td><td class='num'>110</td><td class='num'>61</td><td class='num'>204.74</td><td class='num'>213.61</td><td class='num'>206.06</td><td class='num'>21.3</td><td class='num'>0.994</td><td class='num'>1.043</td><td class='num'>3.1167</td><td class='num'>9.00</td><td class="num"><span class="badge green">✅ 0.0</span></td><td><span class="badge green">GOOD BUY</span></td><td>Steam Community Market (Direct)</td></tr><tr><td class="skin-name-cell" data-chart-id="chart_1055336758580418511">Operation Bravo Case</td><td><a href="#chart_1055336758580418511" class="chart-link" onclick="showChart('chart_1055336758580418511'); return false;">📊 View</a></td><td><a href="https://skinport.com/market?search=Operation%20Bravo%20Case" target="_blank" rel="noopener">Skinport</a></td><td><a href="https://steamcommunity.com/market/listings/730/Operation%20Bravo%20Case" target="_blank" rel="noopener">Steam</a></td><td class='num'>152.67</td><td class='num'>198.73</td><td class="num"><span class="badge green">+10.6%</span></td><td class='num'>168.92</td><td>PLN</td><td class='num'>108</td><td class='num'>192</td><td class='num'>162.02</td><td class='num'>160.58</td><td class='num'>163.51</td><td class='num'>22.7</td><td class='num'>0.991</td><td class='num'>0.991</td><td class='num'>3.0102</td><td class='num'>3.46</td><td class="num"><span class="badge green">✅ 0.0</span></td><td><span class="badge green">GOOD BUY</span></td><td>Steam Community Market (Direct)</td></tr></tbody></table></div>
+    <div id="chartModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2 id="modalChartTitle">Price Chart</h2>
+            <div id="modalChartContainer">
+                <canvas id="modalChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+    // Chart data embedded in page
+    const chartDataMap = {
+  "chart_4331072769945427131": {
+    "name": "AK-47 | Inheritance (Field-Tested)",
+    "history": [
+      {
+        "date": "30d ago",
+        "price": 249.2
+      },
+      {
+        "date": "7d ago",
+        "price": 246.19
+      },
+      {
+        "date": "Recent",
+        "price": 248.48
+      }
+    ]
+  },
+  "chart_9154343304699772475": {
+    "name": "USP-S | Printstream (Minimal Wear)",
+    "history": [
+      {
+        "date": "30d ago",
+        "price": 206.06
+      },
+      {
+        "date": "7d ago",
+        "price": 204.74
+      },
+      {
+        "date": "Recent",
+        "price": 213.61
+      }
+    ]
+  },
+  "chart_1055336758580418511": {
+    "name": "Operation Bravo Case",
+    "history": [
+      {
+        "date": "30d ago",
+        "price": 163.51
+      },
+      {
+        "date": "7d ago",
+        "price": 162.02
+      },
+      {
+        "date": "Recent",
+        "price": 160.58
+      }
+    ]
+  }
+};
+
+    let currentChart = null;
+    let modalChart = null;
+
+    // Show chart in modal
+    function showChart(chartId) {
+        const modal = document.getElementById('chartModal');
+        const data = chartDataMap[chartId];
+
+        if (!data || !data.history || data.history.length === 0) {
+            alert('No price history available for this item');
+            return;
+        }
+
+        document.getElementById('modalChartTitle').textContent = data.name + ' - Price History';
+        modal.style.display = 'block';
+
+        // Destroy existing chart if any
+        if (modalChart) {
+            modalChart.destroy();
+        }
+
+        const ctx = document.getElementById('modalChart').getContext('2d');
+        modalChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.history.map((d, i) => d.date || `Day ${i+1}`),
+                datasets: [{
+                    label: 'Price',
+                    data: data.history.map(d => d.price),
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        grid: {
+                            color: '#334155'
+                        },
+                        ticks: {
+                            color: '#94a3b8'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            color: '#334155'
+                        },
+                        ticks: {
+                            color: '#94a3b8',
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function closeModal() {
+        document.getElementById('chartModal').style.display = 'none';
+        if (modalChart) {
+            modalChart.destroy();
+            modalChart = null;
+        }
+    }
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        const modal = document.getElementById('chartModal');
+        if (event.target == modal) {
+            closeModal();
+        }
+    }
+
+    // Hover chart functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const nameCells = document.querySelectorAll('.skin-name-cell');
+
+        nameCells.forEach(cell => {
+            const chartId = cell.dataset.chartId;
+            const data = chartDataMap[chartId];
+
+            if (data && data.history && data.history.length > 0) {
+                // Create popup element
+                const popup = document.createElement('div');
+                popup.className = 'chart-popup';
+                popup.innerHTML = '<canvas id="hover_' + chartId + '" width="350" height="200"></canvas>';
+                cell.style.position = 'relative';
+                cell.appendChild(popup);
+
+                let hoverChart = null;
+
+                cell.addEventListener('mouseenter', function() {
+                    popup.classList.add('active');
+
+                    const ctx = document.getElementById('hover_' + chartId).getContext('2d');
+                    hoverChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: data.history.map((d, i) => d.date || `Day ${i+1}`),
+                            datasets: [{
+                                label: 'Price',
+                                data: data.history.map(d => d.price),
+                                borderColor: '#3b82f6',
+                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.4,
+                                pointRadius: 2
+                            }]
+                        },
+                        options: {
+                            responsive: false,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: { enabled: true }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: false,
+                                    grid: { color: '#334155' },
+                                    ticks: { color: '#94a3b8', font: { size: 10 } }
+                                },
+                                x: {
+                                    grid: { color: '#334155' },
+                                    ticks: { color: '#94a3b8', font: { size: 9 }, maxRotation: 0 }
+                                }
+                            }
+                        }
+                    });
+                });
+
+                cell.addEventListener('mouseleave', function() {
+                    popup.classList.remove('active');
+                    if (hoverChart) {
+                        hoverChart.destroy();
+                        hoverChart = null;
+                    }
+                });
+            }
+        });
+    });
+
+    // Table sorting functionality
+    document.querySelectorAll('th').forEach((th, colIndex) => {
+        th.addEventListener('click', () => {
+            const table = th.closest('table');
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+
+            const isNumeric = th.classList.contains('num') || th.textContent.includes('Price') || 
+                            th.textContent.includes('Sales') || th.textContent.includes('Risk');
+
+            rows.sort((a, b) => {
+                const aVal = a.cells[colIndex].textContent.trim();
+                const bVal = b.cells[colIndex].textContent.trim();
+
+                if (isNumeric) {
+                    const aNum = parseFloat(aVal.replace(/[^0-9.-]/g, '')) || 0;
+                    const bNum = parseFloat(bVal.replace(/[^0-9.-]/g, '')) || 0;
+                    return aNum - bNum;
+                } else {
+                    return aVal.localeCompare(bVal);
+                }
+            });
+
+            rows.forEach(row => tbody.appendChild(row));
+        });
+    });
+    </script>
+</body>
+</html>

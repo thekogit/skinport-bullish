@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
-
-
 import csv
+import json
 from pathlib import Path
 from typing import List, Dict, Any
 from datetime import datetime, timezone
-
 from config import CSV_FIELDS
 
 def escape_html(s: Any) -> str:
@@ -38,33 +36,32 @@ def read_csv_to_map(path: Path) -> Dict[str, Dict[str, Any]]:
     return out
 
 def generate_html_with_candidates(candidates: List[Dict[str, Any]], rows: List[Dict[str, Any]], 
-                                out_path: Path, title: str = "Fee-Aware Skinport Analysis"):
+                                   out_path: Path, title: str = "Fee-Aware Skinport Analysis"):
+
     def format_pump_risk_cell(pump_risk_str: str) -> str:
         try:
             pump_risk = float(pump_risk_str) if pump_risk_str else 0.0
             if pump_risk >= 60:
-                return f'<td class="num" style="color:#ff1a1a; font-weight:700; background-color:rgba(255,107,107,.12);">{pump_risk_str}</td>'
+                return f'<td class="num"><span class="badge red">🔴 {pump_risk:.1f}</span></td>'
             elif pump_risk >= 40:
-                return f'<td class="num" style="color:#cc0000; font-weight:700;">{pump_risk_str}</td>'
+                return f'<td class="num"><span class="badge orange">🟠 {pump_risk:.1f}</span></td>'
             elif pump_risk >= 25:
-                return f'<td class="num" style="color:#ff6600; font-weight:600;">{pump_risk_str}</td>'
+                return f'<td class="num"><span class="badge yellow">🟡 {pump_risk:.1f}</span></td>'
             elif pump_risk >= 15:
-                return f'<td class="num" style="color:#ff9900;">{pump_risk_str}</td>'
+                return f'<td class="num"><span class="badge green">🟢 {pump_risk:.1f}</span></td>'
             else:
-                return f'<td class="num" style="color:#34d399;">{pump_risk_str}</td>'
+                return f'<td class="num"><span class="badge green">✅ {pump_risk:.1f}</span></td>'
         except:
-            return f'<td class="num">{pump_risk_str}</td>'
+            return f'<td class="num">{escape_html(pump_risk_str)}</td>'
 
     def format_profit_cell(profit_str: str) -> str:
         try:
-            profit = float(profit_str) if profit_str else 0.0
-            if profit >= 20.0:
+            profit_val = float(profit_str) if profit_str else 0.0
+            if profit_val >= 10:
                 return f'<td class="num"><span class="badge green">+{profit_str}%</span></td>'
-            elif profit >= 10.0:
-                return f'<td class="num"><span class="badge green">+{profit_str}%</span></td>'
-            elif profit >= 5.0:
+            elif profit_val >= 5:
                 return f'<td class="num"><span class="badge yellow">+{profit_str}%</span></td>'
-            elif profit >= 0:
+            elif profit_val > 0:
                 return f'<td class="num"><span class="badge gray">+{profit_str}%</span></td>'
             else:
                 return f'<td class="num"><span class="badge red">{profit_str}%</span></td>'
@@ -93,25 +90,36 @@ def generate_html_with_candidates(candidates: List[Dict[str, Any]], rows: List[D
             return f'<span class="badge gray">{v.replace("_", " ")}</span>'
 
     table_headers = [
-        "Name", "Skinport", "Steam", "SP Price", "Steam Price", "Fee-Aware Profit", 
+        "Name", "Chart", "Skinport", "Steam", "SP Price", "Steam Price", "Fee-Aware Profit", 
         "Net Steam", "Currency", "SP Sales7d", "Steam Sales7d", "SP 7d avg", "SP 24h avg", 
         "SP 30d avg", "Steam Explosiveness", "SP 7d vs 30d", "SP Growth", 
         "SP Bullish", "SP Expl", "PumpRisk", "Arbitrage", "Source"
     ]
 
-    header_html = "<tr>" + "".join([f"<th>{h}<span class=\"sort-arrow\"> ▼</span></th>" for h in table_headers]) + "</tr>"
+    header_html = "<tr>" + "".join([f'<th>{h}<span class="sort-arrow"> ▼</span></th>' for h in table_headers]) + "</tr>"
 
     def row_html(r, candidate=False):
+        skin_name = escape_html(r.get('Name'))
         skin_anchor = f'<a href="{escape_html(r.get("Skinport_URL"))}" target="_blank" rel="noopener">Skinport</a>'
         steam_anchor = f'<a href="{escape_html(r.get("Steam_URL"))}" target="_blank" rel="noopener">Steam</a>'
         profit_cell = format_profit_cell(r.get("Fee_Aware_Profit", "0").rstrip("%"))
         pump_cell = format_pump_risk_cell(r.get("PumpRisk", "0"))
         arb_cell = arb_badge(r.get("Arbitrage_Opportunity", ""))
 
+        # Generate chart data ID for this skin
+        chart_id = f"chart_{abs(hash(r.get('Name', '')))}".replace("-", "")
+
+        # Create name cell with hover chart
+        name_cell = f'<td class="skin-name-cell" data-chart-id="{chart_id}">{skin_name}</td>'
+
+        # Create chart link cell
+        chart_link = f'<td><a href="#{chart_id}" class="chart-link" onclick="showChart(\'{chart_id}\'); return false;">📊 View</a></td>'
+
         tr_style = " style='background:linear-gradient(180deg, rgba(34,197,94,.12), transparent)'" if candidate else ""
         return (
             f"<tr{tr_style}>"
-            f"<td>{escape_html(r.get('Name'))}</td>"
+            f"{name_cell}"
+            f"{chart_link}"
             f"<td>{skin_anchor}</td>"
             f"<td>{steam_anchor}</td>"
             f"<td class='num'>{escape_html(r.get('Skinport_Price'))}</td>"
@@ -130,172 +138,83 @@ def generate_html_with_candidates(candidates: List[Dict[str, Any]], rows: List[D
             f"<td class='num'>{escape_html(r.get('Skinport_BullishScore'))}</td>"
             f"<td class='num'>{escape_html(r.get('Skinport_Explosiveness'))}</td>"
             f"{pump_cell}"
-            f"<td style='text-align:center'>{arb_cell}</td>"
-            f"<td style='text-align:center; font-size:10px;'><span class='pill'>{escape_html(r.get('Steam_Source',''))}</span></td>"
+            f"<td>{arb_cell}</td>"
+            f"<td>{escape_html(r.get('Steam_Source', ''))}</td>"
             "</tr>"
         )
 
-    cand_rows = [row_html(r, candidate=True) for r in candidates]
-    main_rows = [row_html(r, candidate=False) for r in rows]
+    cand_rows = [row_html(c, True) for c in candidates]
+    main_rows = [row_html(r, False) for r in rows]
 
-    # Generate complete HTML with modern styling and JavaScript
-    html = f"""<!doctype html>
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+
+    # Collect chart data for all items
+    chart_data_map = {}
+    for r in rows:
+        chart_id = f"chart_{abs(hash(r.get('Name', '')))}".replace("-", "")
+        price_history = r.get('PriceHistory', [])
+        chart_data_map[chart_id] = {
+            'name': r.get('Name', ''),
+            'history': price_history
+        }
+
+    html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="color-scheme" content="light dark">
-<title>{escape_html(title)}</title>
-<style>
-:root {{
-    color-scheme: light dark;
-    --bg: #0b0f14;
-    --panel: #121823;
-    --panel-2: #0f1520;
-    --text: #e6edf3;
-    --muted: #8b98a5;
-    --border: #1f2a3a;
-    --accent: #4aa3ff;
-    --accent-2: #7cd992;
-    --bad-red: #ff6b6b;
-    --bad-amber: #f7c948;
-    --good-green: #22c55e;
-    --row-even: rgba(255,255,255,0.02);
-    --row-hover: rgba(74,163,255,0.10);
-}}
-@media (prefers-color-scheme: light) {{
-    :root {{
-    --bg: #f7f9fc;
-    --panel: #ffffff;
-    --panel-2: #f0f4fa;
-    --text: #0b1a2a;
-    --muted: #5b6b7b;
-    --border: #dee5ef;
-    --accent: #1f73ff;
-    --accent-2: #19a974;
-    --bad-red: #d7263d;
-    --bad-amber: #e5a100;
-    --good-green: #0f9d58;
-    --row-even: #fafcff;
-    --row-hover: rgba(31,115,255,0.08);
-    }}
-}}
-/* Base styles */
-* {{ box-sizing: border-box; }}
-html, body {{ height: 100%; }}
-body {{ background: var(--bg); color: var(--text); font-family: Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 20px; line-height: 1.5; }}
-h1 {{ margin: 6px 0 14px; font-weight: 650; letter-spacing: .2px; }}
-.toolbar {{ display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }}
-.chip {{ background: var(--panel-2); border: 1px solid var(--border); color: var(--muted); padding: 6px 10px; border-radius: 999px; font-size: 12px; }}
-.search {{ flex: 1 1 320px; display: flex; align-items: center; gap: 8px; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px; }}
-.search input {{ flex: 1; background: transparent; border: 0; outline: 0; color: var(--text); font-size: 14px; }}
-.search input::placeholder {{ color: var(--muted); }}
-.card {{ background: var(--panel); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,.15); overflow: hidden; margin-bottom: 20px; }}
-.table-wrap {{ overflow: auto; max-width: 100%; border-radius: 12px; }}
-table {{ border-collapse: separate; border-spacing: 0; width: 100%; font-size: 12.5px; }}
-thead th {{ position: sticky; top: 0; z-index: 2; background: linear-gradient(180deg, var(--panel-2), var(--panel)); color: var(--muted); text-transform: uppercase; letter-spacing: .4px; font-weight: 600; padding: 10px 8px; border-bottom: 1px solid var(--border); backdrop-filter: saturate(180%) blur(6px); cursor: pointer; user-select: none; }}
-thead th:hover {{ background: linear-gradient(180deg, var(--panel), var(--panel-2)); }}
-tbody td, tbody th {{ padding: 9px 8px; border-bottom: 1px solid var(--border); }}
-tbody tr:nth-child(even) {{ background: var(--row-even); }}
-tbody tr:hover {{ background: var(--row-hover); }}
-th, td {{ text-align: left; }}
-td.num, th.num {{ text-align: right; font-variant-numeric: tabular-nums; }}
-td a {{ text-decoration: none; color: var(--accent); background: transparent; padding: 0; }}
-td a:hover {{ text-decoration: underline; }}
-.sort-arrow {{ color: var(--muted); margin-left: 6px; font-size: 10px; }}
-.legend {{ background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin: 12px 0; color: var(--muted); font-size: 13px; }}
-.cand-note {{ background: linear-gradient(180deg, rgba(34,197,94,.15), transparent); border-left: 4px solid var(--good-green); padding: 10px 14px; border-radius: 8px; margin: 14px 0; }}
-.badge {{ display: inline-block; padding: 3px 8px; border-radius: 999px; font-weight: 600; font-size: 11px; border: 1px solid transparent; }}
-.badge.green {{ background: rgba(34,197,94,.15); color: var(--good-green); border-color: rgba(34,197,94,.25); }}
-.badge.yellow {{ background: rgba(234,179,8,.15); color: #eab308; border-color: rgba(234,179,8,.25); }}
-.badge.red {{ background: rgba(255,107,107,.12); color: var(--bad-red); border-color: rgba(255,107,107,.2); }}
-.badge.gray {{ background: rgba(148,163,184,.12); color: var(--muted); border-color: rgba(148,163,184,.2); }}
-.pill {{ background: var(--panel-2); color: var(--muted); padding: 2px 6px; border-radius: 6px; font-size: 10px; }}
-.footer {{ color: var(--muted); font-size: 12px; margin-top: 10px; text-align: center; }}
-</style>
-<script>
-// JavaScript for table sorting and filtering
-const tableSortStates = new Map();
-function sortTable(table, column) {{
-const tableId = table.getAttribute('data-table-id') || Math.random().toString();
-table.setAttribute('data-table-id', tableId);
-const stateKey = tableId + '-' + column;
-let currentState = tableSortStates.get(stateKey) || 'none';
-let newState, ascending;
-if (currentState === 'none' || currentState === 'desc') {{ newState = 'asc'; ascending = true; }}
-else {{ newState = 'desc'; ascending = false; }}
-tableSortStates.set(stateKey, newState);
-const tbody = table.querySelector('tbody');
-const rows = Array.from(tbody.querySelectorAll('tr'));
-rows.sort((a, b) => {{
-    let aVal = a.children[column].textContent.trim();
-    let bVal = b.children[column].textContent.trim();
-    if (column >= 3 && column <= 17) {{
-    aVal = parseFloat(aVal.replace(/[^\d.-]/g, '')) || 0;
-    bVal = parseFloat(bVal.replace(/[^\d.-]/g, '')) || 0;
-    return ascending ? aVal - bVal : bVal - aVal;
-    }} else {{ return ascending ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal); }}
-}});
-tbody.innerHTML = '';
-rows.forEach(row => tbody.appendChild(row));
-const headers = table.querySelectorAll('th');
-headers.forEach((header, index) => {{
-    const arrow = header.querySelector('.sort-arrow');
-    if (arrow) {{
-    if (index === column) {{
-        arrow.textContent = ascending ? ' ▲' : ' ▼';
-    }} else {{
-        arrow.textContent = ' ▼';
-        const otherStateKey = tableId + '-' + index;
-        tableSortStates.set(otherStateKey, 'none');
-    }}
-    }}
-}});
-}}
-function initSortableTable(table) {{
-const headers = table.querySelectorAll('th');
-headers.forEach((header, index) => {{
-    if (index < 2) return;
-    header.addEventListener('click', () => {{ sortTable(table, index); }});
-}});
-}}
-function filterTables(){{
-const q = (document.getElementById('filterInput')?.value || '').toLowerCase();
-document.querySelectorAll('table.sortable-table tbody tr').forEach(tr=>{{
-    const text = tr.innerText.toLowerCase();
-    tr.style.display = text.includes(q) ? '' : 'none';
-}});
-}}
-document.addEventListener('DOMContentLoaded', () => {{
-const tables = document.querySelectorAll('.sortable-table');
-tables.forEach(initSortableTable);
-}});
-</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{escape_html(title)}</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {{ margin:0; padding:0; box-sizing:border-box; }}
+        body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+               background: #0f172a; color: #e2e8f0; padding:20px; }}
+        .container {{ max-width:100%; margin:0 auto; }}
+        h1 {{ color:#fff; margin-bottom:10px; }}
+        .meta {{ color:#94a3b8; margin-bottom:20px; font-size:14px; }}
+        .card {{ background:#1e293b; border-radius:8px; padding:20px; margin-bottom:20px; 
+                box-shadow:0 4px 6px rgba(0,0,0,0.3); }}
+        .cand-note {{ background:#1e293b; color:#fff; padding:12px; margin-bottom:15px; border-radius:6px;
+                     border-left:4px solid #22c55e; }}
+        .table-wrap {{ overflow-x:auto; }}
+        table {{ width:100%; border-collapse:collapse; font-size:13px; }}
+        th {{ background:#334155; color:#fff; padding:12px 8px; text-align:left; position:sticky; top:0;
+             white-space:nowrap; cursor:pointer; user-select:none; }}
+        th:hover {{ background:#475569; }}
+        .sort-arrow {{ color:#94a3b8; font-size:10px; margin-left:4px; }}
+        td {{ padding:10px 8px; border-bottom:1px solid #334155; }}
+        tr:hover {{ background:#334155; }}
+        .num {{ text-align:right; font-family:'Courier New', monospace; }}
+        a {{ color:#3b82f6; text-decoration:none; }}
+        a:hover {{ text-decoration:underline; }}
+        .badge {{ padding:4px 8px; border-radius:4px; font-size:11px; font-weight:600; white-space:nowrap; }}
+        .badge.green {{ background:#22c55e; color:#000; }}
+        .badge.yellow {{ background:#eab308; color:#000; }}
+        .badge.orange {{ background:#f97316; color:#fff; }}
+        .badge.red {{ background:#ef4444; color:#fff; }}
+        .badge.gray {{ background:#6b7280; color:#fff; }}
+        .skin-name-cell {{ position: relative; cursor: help; }}
+        .chart-popup {{ position: absolute; display: none; z-index: 1000; background: #1e293b; 
+                       border: 2px solid #3b82f6; border-radius: 8px; padding: 15px; 
+                       box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 400px; left: 0; top: 100%; margin-top: 5px; }}
+        .chart-popup.active {{ display: block; }}
+        .chart-link {{ color: #3b82f6; cursor: pointer; font-size: 16px; }}
+        .chart-link:hover {{ color: #60a5fa; }}
+        .modal {{ display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; 
+                 background-color: rgba(0,0,0,0.8); }}
+        .modal-content {{ background-color: #1e293b; margin: 5% auto; padding: 20px; border: 1px solid #3b82f6; 
+                         width: 80%; max-width: 800px; border-radius: 10px; }}
+        .close {{ color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }}
+        .close:hover {{ color: #fff; }}
+        #modalChartContainer {{ height: 400px; }}
+    </style>
 </head>
 <body>
-<h1>{escape_html(title)}</h1>
-<div class="toolbar">
-<div class="chip">⚡ Concurrent Analysis</div>
-<div class="search">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M21 21l-3.8-3.8M10.8 18.6a7.8 7.8 0 1 1 0-15.6 7.8 7.8 0 0 1 0 15.6z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-    </svg>
-    <input id="filterInput" placeholder="Filter by name, type, or source" oninput="filterTables()" />
-</div>
-</div>
+    <div class="container">
+        <h1>{escape_html(title)}</h1>
+        <div class="meta">Generated: {timestamp}</div>
+"""
 
-<div class="legend">
-<strong>🚀 High-Speed Concurrent Analysis:</strong> Async fetching with adaptive rate limiting<br>
-<strong>💰 Fee-Aware Arbitrage:</strong> Buy Skinport (0% fees) → Sell Steam (15% fees)<br>
-<strong>Profit Colors:</strong> 
-<span class="badge green">Green ≥10%</span> 
-<span class="badge yellow">Yellow 5-10%</span> 
-<span class="badge gray">Gray 0-5%</span>
-<span class="badge red">Red <0%</span><br>
-<strong>Performance:</strong> Cache hit rates and concurrent processing for maximum speed
-</div>"""
-
-    # Candidate table
     if candidates:
         html += f"<div class='cand-note'><strong>🎯 Fee-Aware Top Candidates:</strong> {len(candidates)} item(s) with profitable arbitrage after platform fees</div>"
         html += f"<div class='card table-wrap'><table class='sortable-table'><thead>{header_html}</thead><tbody>"
@@ -307,8 +226,217 @@ tables.forEach(initSortableTable);
     html += "".join(main_rows)
     html += "</tbody></table></div>"
 
-    html += f"<div class='footer'>High-speed concurrent analysis • Platform fees: Skinport 0% + Steam 15% • {len(rows)} items processed • Generated: {datetime.now(timezone.utc).isoformat()}</div>"
-    html += "</body></html>"
+    # Chart modal
+    html += """
+    <div id="chartModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2 id="modalChartTitle">Price Chart</h2>
+            <div id="modalChartContainer">
+                <canvas id="modalChart"></canvas>
+            </div>
+        </div>
+    </div>
+    """
 
-    out_path.write_text(html, encoding="utf8")
-    print(f"📄 Wrote concurrent analysis HTML to {out_path}")
+    # JavaScript for chart data and interactions
+    html += f"""
+    <script>
+    // Chart data embedded in page
+    const chartDataMap = {json.dumps(chart_data_map, indent=2)};
+
+    let currentChart = null;
+    let modalChart = null;
+
+    // Show chart in modal
+    function showChart(chartId) {{
+        const modal = document.getElementById('chartModal');
+        const data = chartDataMap[chartId];
+
+        if (!data || !data.history || data.history.length === 0) {{
+            alert('No price history available for this item');
+            return;
+        }}
+
+        document.getElementById('modalChartTitle').textContent = data.name + ' - Price History';
+        modal.style.display = 'block';
+
+        // Destroy existing chart if any
+        if (modalChart) {{
+            modalChart.destroy();
+        }}
+
+        const ctx = document.getElementById('modalChart').getContext('2d');
+        modalChart = new Chart(ctx, {{
+            type: 'line',
+            data: {{
+                labels: data.history.map((d, i) => d.date || `Day ${{i+1}}`),
+                datasets: [{{
+                    label: 'Price',
+                    data: data.history.map(d => d.price),
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }}]
+            }},
+            options: {{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {{
+                    legend: {{
+                        display: false
+                    }},
+                    tooltip: {{
+                        mode: 'index',
+                        intersect: false
+                    }}
+                }},
+                scales: {{
+                    y: {{
+                        beginAtZero: false,
+                        grid: {{
+                            color: '#334155'
+                        }},
+                        ticks: {{
+                            color: '#94a3b8'
+                        }}
+                    }},
+                    x: {{
+                        grid: {{
+                            color: '#334155'
+                        }},
+                        ticks: {{
+                            color: '#94a3b8',
+                            maxRotation: 45,
+                            minRotation: 45
+                        }}
+                    }}
+                }}
+            }}
+        }});
+    }}
+
+    function closeModal() {{
+        document.getElementById('chartModal').style.display = 'none';
+        if (modalChart) {{
+            modalChart.destroy();
+            modalChart = null;
+        }}
+    }}
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {{
+        const modal = document.getElementById('chartModal');
+        if (event.target == modal) {{
+            closeModal();
+        }}
+    }}
+
+    // Hover chart functionality
+    document.addEventListener('DOMContentLoaded', function() {{
+        const nameCells = document.querySelectorAll('.skin-name-cell');
+
+        nameCells.forEach(cell => {{
+            const chartId = cell.dataset.chartId;
+            const data = chartDataMap[chartId];
+
+            if (data && data.history && data.history.length > 0) {{
+                // Create popup element
+                const popup = document.createElement('div');
+                popup.className = 'chart-popup';
+                popup.innerHTML = '<canvas id="hover_' + chartId + '" width="350" height="200"></canvas>';
+                cell.style.position = 'relative';
+                cell.appendChild(popup);
+
+                let hoverChart = null;
+
+                cell.addEventListener('mouseenter', function() {{
+                    popup.classList.add('active');
+
+                    const ctx = document.getElementById('hover_' + chartId).getContext('2d');
+                    hoverChart = new Chart(ctx, {{
+                        type: 'line',
+                        data: {{
+                            labels: data.history.map((d, i) => d.date || `Day ${{i+1}}`),
+                            datasets: [{{
+                                label: 'Price',
+                                data: data.history.map(d => d.price),
+                                borderColor: '#3b82f6',
+                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.4,
+                                pointRadius: 2
+                            }}]
+                        }},
+                        options: {{
+                            responsive: false,
+                            plugins: {{
+                                legend: {{ display: false }},
+                                tooltip: {{ enabled: true }}
+                            }},
+                            scales: {{
+                                y: {{
+                                    beginAtZero: false,
+                                    grid: {{ color: '#334155' }},
+                                    ticks: {{ color: '#94a3b8', font: {{ size: 10 }} }}
+                                }},
+                                x: {{
+                                    grid: {{ color: '#334155' }},
+                                    ticks: {{ color: '#94a3b8', font: {{ size: 9 }}, maxRotation: 0 }}
+                                }}
+                            }}
+                        }}
+                    }});
+                }});
+
+                cell.addEventListener('mouseleave', function() {{
+                    popup.classList.remove('active');
+                    if (hoverChart) {{
+                        hoverChart.destroy();
+                        hoverChart = null;
+                    }}
+                }});
+            }}
+        }});
+    }});
+
+    // Table sorting functionality
+    document.querySelectorAll('th').forEach((th, colIndex) => {{
+        th.addEventListener('click', () => {{
+            const table = th.closest('table');
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+
+            const isNumeric = th.classList.contains('num') || th.textContent.includes('Price') || 
+                            th.textContent.includes('Sales') || th.textContent.includes('Risk');
+
+            rows.sort((a, b) => {{
+                const aVal = a.cells[colIndex].textContent.trim();
+                const bVal = b.cells[colIndex].textContent.trim();
+
+                if (isNumeric) {{
+                    const aNum = parseFloat(aVal.replace(/[^0-9.-]/g, '')) || 0;
+                    const bNum = parseFloat(bVal.replace(/[^0-9.-]/g, '')) || 0;
+                    return aNum - bNum;
+                }} else {{
+                    return aVal.localeCompare(bVal);
+                }}
+            }});
+
+            rows.forEach(row => tbody.appendChild(row));
+        }});
+    }});
+    </script>
+</body>
+</html>
+"""
+
+    with out_path.open("w", encoding="utf8") as f:
+        f.write(html)
+
+    print(f"✅ Generated HTML report: {out_path}")
+    print(f"   {len(candidates)} candidates, {len(rows)} total items")
+    print(f"   📊 Interactive price charts included (hover on names, click chart links)")
