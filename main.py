@@ -20,6 +20,45 @@ from data_analysis import compute_fee_aware_arbitrage_opportunity, compute_bulli
 from output_generator import write_csv, read_csv_to_map, generate_html_with_candidates
 from filters import parse_filters, matches_filters, get_available_filters
 
+
+
+def extract_price_history(sales_obj, days=90):
+    """
+    Extract price history from Skinport sales data using available periods.
+    Creates a 4-point chart from 90d, 30d, 7d, and 24h average prices.
+
+    Args:
+        sales_obj: Sales data object from Skinport API
+        days: Maximum days to include (default 90)
+
+    Returns:
+        List of dicts with 'date' and 'price' keys for Chart.js
+    """
+    if not sales_obj:
+        return []
+
+    history = []
+
+    # Extract average prices from the 4 available periods in Skinport API
+    # This creates a simple 4-point trend chart
+    periods = [
+        ('last_90_days', '90d ago'),
+        ('last_30_days', '30d ago'),
+        ('last_7_days', '7d ago'),
+        ('last_24_hours', '24h ago')
+    ]
+
+    for period_key, label in periods:
+        if period_key in sales_obj:
+            avg_price = safe_avg(sales_obj.get(period_key))
+            if avg_price is not None and avg_price > 0:
+                history.append({
+                    'date': label,
+                    'price': round(avg_price, 2)
+                })
+
+    return history
+
 PUMP_RISK_MAX = 60.0
 
 def display_game_selection():
@@ -214,7 +253,8 @@ def process_game(game: str, currency: str, min_price: float, max_price: float,
                 "LastUpdated": now,
                 "Steam_Source": "",
                 "Fee_Aware_Profit": "",
-                "Net_Steam_Proceeds": ""
+                "Net_Steam_Proceeds": "",
+                "PriceHistory": extract_price_history(s)
             }
             rows.append(row)
             item_names_for_steam.append(name)
